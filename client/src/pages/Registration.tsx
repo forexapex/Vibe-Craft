@@ -97,12 +97,34 @@ export default function Registration() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    // User requested email functionality - mocking it
-    toast.success("Registration Submitted Successfully!", {
-        description: "Registration details sent to ipeorgofficial@gmail.com",
-    });
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const response = await fetch("/api/registrations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success("Registration Submitted Successfully!", {
+          description: "Your registration has been sent to ipeorgofficial@zohomail.in and Discord. Check your email for confirmation.",
+        });
+        form.reset();
+      } else {
+        toast.error("Registration Failed", {
+          description: data.message || "Please check your information and try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error("Registration Failed", {
+        description: "Unable to submit registration. Please try again later.",
+      });
+    }
   }
 
   return (

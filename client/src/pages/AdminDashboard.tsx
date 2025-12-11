@@ -59,13 +59,33 @@ const mockLogs: LogEntry[] = [
 export default function AdminDashboard() {
   const [_, setLocation] = useLocation();
   const [games, setGames] = useState<GameConfig[]>(initialGames);
-  const [activeTab, setActiveTab] = useState("games");
+  const [activeTab, setActiveTab] = useState("registrations");
+  const [registrations, setRegistrations] = useState<any[]>([]);
   
   // Content Config
   const [heroTitle, setHeroTitle] = useState("LEVEL UP");
   const [heroSubtitle, setHeroSubtitle] = useState("Official Tournament Platform");
   const [prizePool, setPrizePool] = useState("$100K");
   const [playerCount, setPlayerCount] = useState("50K+");
+
+  // Fetch registrations
+  useEffect(() => {
+    const fetchRegistrations = async () => {
+      try {
+        const response = await fetch("/api/registrations");
+        if (response.ok) {
+          const data = await response.json();
+          setRegistrations(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch registrations:", error);
+      }
+    };
+    
+    if (activeTab === "registrations") {
+      fetchRegistrations();
+    }
+  }, [activeTab]);
 
   // Check auth
   useEffect(() => {
@@ -139,8 +159,11 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <Tabs defaultValue="games" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+        <Tabs defaultValue="registrations" className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-5 bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
+            <TabsTrigger value="registrations" className="data-[state=active]:bg-primary data-[state=active]:text-black font-orbitron">
+              <Users className="w-4 h-4 mr-2" /> Registrations
+            </TabsTrigger>
             <TabsTrigger value="games" className="data-[state=active]:bg-primary data-[state=active]:text-black font-orbitron">
               <Trophy className="w-4 h-4 mr-2" /> Tournaments
             </TabsTrigger>
@@ -154,6 +177,77 @@ export default function AdminDashboard() {
               <Settings className="w-4 h-4 mr-2" /> Settings
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="registrations" className="space-y-6">
+            <div className="glass-panel rounded-xl border border-white/10 overflow-hidden">
+              <div className="p-6 border-b border-white/10 bg-white/5 flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-orbitron font-bold text-primary">Team Registrations</h3>
+                  <p className="text-sm text-gray-400 mt-1">Total: {registrations.length} teams</p>
+                </div>
+                <Button size="sm" variant="outline" className="border-white/20 font-orbitron">
+                  Export Data
+                </Button>
+              </div>
+              
+              <div className="divide-y divide-white/10">
+                {registrations.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500">
+                    <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                    <p className="text-lg font-rajdhani">No registrations yet</p>
+                    <p className="text-sm">New team registrations will appear here</p>
+                  </div>
+                ) : (
+                  registrations.map((reg: any, index: number) => (
+                    <div key={reg.id || index} className="p-6 hover:bg-white/5 transition-colors">
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div className="md:col-span-3">
+                          <div className="text-sm text-gray-500 mb-1">Team Name</div>
+                          <div className="font-orbitron font-bold text-xl text-primary">{reg.teamName}</div>
+                          <div className="text-xs text-gray-400 mt-1">[{reg.teamTag}]</div>
+                        </div>
+                        
+                        <div className="md:col-span-3">
+                          <div className="text-sm text-gray-500 mb-1">Captain</div>
+                          <div className="text-white font-rajdhani">{reg.captain?.name || 'N/A'}</div>
+                          <div className="text-xs text-gray-400">{reg.captain?.email || 'N/A'}</div>
+                        </div>
+                        
+                        <div className="md:col-span-2">
+                          <div className="text-sm text-gray-500 mb-1">Region</div>
+                          <div className="text-white font-rajdhani capitalize">{reg.region}</div>
+                        </div>
+                        
+                        <div className="md:col-span-2">
+                          <div className="text-sm text-gray-500 mb-1">Players</div>
+                          <div className="text-white font-rajdhani">{reg.players?.length || 0} members</div>
+                        </div>
+                        
+                        <div className="md:col-span-2">
+                          <div className="text-sm text-gray-500 mb-1">Registered</div>
+                          <div className="text-xs text-gray-400 font-mono">
+                            {reg.createdAt ? new Date(reg.createdAt).toLocaleDateString() : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex gap-2">
+                        <Button size="sm" variant="outline" className="text-xs border-primary/50 text-primary hover:bg-primary/10">
+                          View Details
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs border-green-500/50 text-green-400 hover:bg-green-500/10">
+                          Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs border-red-500/50 text-red-400 hover:bg-red-500/10">
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="games" className="space-y-6">
             <div className="flex justify-between items-center mb-6">
